@@ -1,0 +1,14 @@
+## environment file for DRAM ##
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - python =3.9
+  - hmmer =3.3.2
+  - prodigal =2.6.3
+  - mmseqs2 =13.45111
+  - infernal =1.1.4
+  - trnascan-se =2.0.9
+  - barrnap  =0.9
+  - dram =1.2.4
