@@ -11,6 +11,6 @@ outDir=$3
 threads=$4
 
 ### commands ###
-spades.py -1 ${FWD_trimmed} -2 ${REV_trimmed} --careful --threads ${threads} -o ${outDir}
+spades.py -1 ${FWD_trimmed} -2 ${REV_trimmed} --isolate --threads ${threads} -o ${outDir}
 
 ### END ###

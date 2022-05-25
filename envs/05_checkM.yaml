@@ -10,5 +10,5 @@ dependencies:
   - pysam =0.17.0
   - hmmer =3.3.2
   - prodigal =2.6.3
-  - pplacer =1.1.alpha19
-  - checkm-genome =1.0.13
+#  - pplacer =1.1.alpha19
+#  - checkm-genome =1.0.13

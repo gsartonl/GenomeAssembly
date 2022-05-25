@@ -5,44 +5,44 @@
 #################################
 
 ## Import config file ##
-configfile: "config.yaml"
+configfile: "setup/config.yaml"
 
 ### Loading modules ###
 import os
+import glob
 from datetime import datetime
 from pathlib import Path
 
 
 ##
-LIBRARY=config['SAMPLES']
-#print(LIBRARY)
+
 ## SetUp paths ##
 
-workDir = config['directories']['workDir']
-pathRaw = workDir + config['directories']['rawReadsDir']
-pathFastQC = workDir + config['directories']['fastQC']
-pathTrimmed = workDir + config['directories']['trimmedReads']
-pathAssembly = workDir + config['directories']['assembly']
-pathAnnotation = workDir + config['directories']['annotation']
-pathCheckM = workDir + config['directories']['checkM']
-pathCoverage = workDir + config['directories']['readCoverage']
+workDir = config['workDir']
+pathRaw = ''.join(workDir + config['rawReadsDir'])
+pathFastQC = ''.join(workDir + config['fastQC'])
+pathTrimmed = ''.join(workDir + config['trimmedReads'])
+pathAssembly = ''.join(workDir + config['assembly'])
+pathAnnotation = ''.join(workDir + config['annotation'])
+pathCheckM = ''.join(workDir + config['checkM'])
+pathCoverage = ''.join(workDir + config['readCoverage'])
 coverage=config['FilterContigs']['coverage']
 length=config['FilterContigs']['length']
 
 #print(pathTrimmed)
 
 ### Functions ###
-def GetPaired_input(wildcards) :
-   fwd=pathRaw+"/"+wildcards.LIBRARY+"_L"+wildcards.LANE+"_R1_001_"+config['metadata'][wildcards.LIBRARY][int(wildcards.LANE)]['Hash_FWD']+".fastq.gz"
-   rev=pathRaw+"/"+wildcards.LIBRARY+"_L"+wildcards.LANE+"_R2_001_"+config['metadata'][wildcards.LIBRARY][int(wildcards.LANE)]['Hash_REV']+".fastq.gz"
-  # print([fwd , rev])
-   return([fwd , rev])
+# def GetPaired_input(wildcards) :
+#    fwd=pathRaw+"/"+wildcards.LIBRARY+"_L"+wildcards.LANE+"_R1_001_"+config['metadata'][wildcards.LIBRARY][int(wildcards.LANE)]['Hash_FWD']+".fastq.gz"
+#    rev=pathRaw+"/"+wildcards.LIBRARY+"_L"+wildcards.LANE+"_R2_001_"+config['metadata'][wildcards.LIBRARY][int(wildcards.LANE)]['Hash_REV']+".fastq.gz"
+#   # print([fwd , rev])
+#    return([fwd , rev])
 
 # Novogene formated
 def GetPaired_input(wildcards) :
     #print(wildcards.LIBRARY)
-    fwd=pathRaw+"/"+wildcards.LIBRARY+ "_" +config['LIBRARY'][wildcards.LIBRARY]['Hash_FWD']+ "_L"+config['LIBRARY'][wildcards.LIBRARY]['Lane']+"_1" + config['suffix']
-    rev=pathRaw+"/"+wildcards.LIBRARY+ "_" +config['LIBRARY'][wildcards.LIBRARY]['Hash_REV']+ "_L"+config['LIBRARY'][wildcards.LIBRARY]['Lane']+"_2" + config['suffix']
+    fwd=pathRaw+"/"+wildcards.LIBRARY+ "_" +config['LIBRARY'][wildcards.LIBRARY]['Hash_FWD']+ "_"+config['LIBRARY'][wildcards.LIBRARY]['Lane']+"_1" + config['suffix']
+    rev=pathRaw+"/"+wildcards.LIBRARY+ "_" +config['LIBRARY'][wildcards.LIBRARY]['Hash_REV']+ "_"+config['LIBRARY'][wildcards.LIBRARY]['Lane']+"_2" + config['suffix']
     #print([fwd , rev])
     return([fwd , rev])
 
@@ -51,11 +51,37 @@ def GetGenomeID(path):
     ID=fileName.strsplit('_')[0]
     return(ID)
 
+
+### make config files for Genomes ###
+# def getConfigGenomes(pathRawFiles,workDir=workDir) :
+#     os.chdir(pathRawFiles)
+#     fwd = glob.glob("*_1.fq.gz")
+#     sampleName = [f.split('_')[0] for f in fwd]
+#     hashm=['_'.join(f.split('_')[1:3]) for f in fwd]
+#     lane=[f.split('_')[3] for f in fwd]
+#
+#
+#     with open("./setup/config.yaml", 'a') :
+#         toWrite="SAMPLES:\n"
+#         for s in range(len(fwd)) :
+#             toWrite+= "\t- " + sampleName[s]
+#
+#         toWrite+="LIBRARY:\n"
+#         for s in range(len(fwd)) :
+#             toWrite+= "\t" + sampleName[s] + ":\n" + "\t Lane: '" + lane[s] + "'\n" + "\t Hash_FWD: '" + hashm[s] + "'\n" + "\t Hash_REV: '" + hashm[s] + "'\n"
+#
+#     print("Making config file for samples")
+#     os.chdir(workDir)
+# getConfigGenomes(pathRaw,workDir)
+configfile:"./setup/config2.yaml"
+
+LIBRARY=config['SAMPLES']
+print(LIBRARY)
 ## rules ##
 #print(LIBRARY)
 rule all :
     input :
-        pairedFWD=expand(pathTrimmed + "/{LIBRARY}_R1_paired.fastq.gz", LIBRARY="ESL0744"),
+        pairedFWD=expand(pathTrimmed + "/{LIBRARY}_R1_paired.fastq.gz", LIBRARY=LIBRARY),
         outDir=expand(pathFastQC + "/{LIBRARY}", LIBRARY=LIBRARY),
         outDirAssembly=expand(pathAssembly + "/{LIBRARY}", LIBRARY=LIBRARY),
         #checkM=expand(pathCheckM + "/{LIBRARY}/", LIBRARY=LIBRARY),
@@ -79,7 +105,7 @@ rule fastQC :
     conda:
         "envs/01_fastqc.yaml"
     shell:
-        "scripts/fastqc.sh {input} {output.outDir}"
+        "scripts/01_fastqc.sh {input} {output.outDir}"
 
 
 rule readTrimming:

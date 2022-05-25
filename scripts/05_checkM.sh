@@ -7,7 +7,7 @@ echo "#####################################################"
 
 
 ################# Setting up CheckM #################
-checkm data setRoot /work/FAC/FBM/DMF/pengel/spirit/gsartonl/checkM/checkm_databases/
+checkm data setRoot "/Users/sbrochet/GenomeAssembly/setup/checkm_databases"
 
 # ### Create directories and define variables
 workdir=$1
