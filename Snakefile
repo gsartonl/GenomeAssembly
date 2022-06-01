@@ -84,10 +84,11 @@ rule all :
         pairedFWD=expand(pathTrimmed + "/{LIBRARY}_R1_paired.fastq.gz", LIBRARY=LIBRARY),
         outDir=expand(pathFastQC + "/{LIBRARY}", LIBRARY=LIBRARY),
         outDirAssembly=expand(pathAssembly + "/{LIBRARY}", LIBRARY=LIBRARY),
+        annot=expand(pathAnnotation + "/{LIBRARY}",LIBRARY=LIBRARY)
         #checkM=expand(pathCheckM + "/{LIBRARY}/", LIBRARY=LIBRARY),
-        tsv=expand(pathCheckM + "/{LIBRARY}/CheckM_QC_f2_{LIBRARY}.tsv", LIBRARY=LIBRARY),
-        outDirDRAM= expand(pathAnnotation + "/{LIBRARY}", LIBRARY=LIBRARY),
-        depth=expand(pathCoverage + "/{LIBRARY}_depth.txt", LIBRARY=LIBRARY)
+        #tsvf2=expand(pathCheckM + "/{LIBRARY}/CheckM_QC_f2_{LIBRARY}.tsv", LIBRARY=LIBRARY),
+        #outDirDRAM= expand(pathAnnotation + "/{LIBRARY}", LIBRARY=LIBRARY),
+        # depth=expand(pathCoverage + "/{LIBRARY}_depth.txt", LIBRARY=LIBRARY)
 
 rule fastQC :
     input:
@@ -164,87 +165,109 @@ rule FilterContigs :
         assembly=rules.assembly.output.contigs
     output:
         filteredContigs= pathAssembly + "/{LIBRARY}/contigs_filtered.fasta"
+    #filteredContigsAnnot= pathAssembly + "/04_checkM/{LIBRARY}_contigs_filtered.fasta"
     params:
        coverage=coverage,
        length=length
-    resources:
-        account='pengel_spirit',
-        runtime_s="600",
-        mem_mb=1500
+    # resources:
+    #     account='pengel_spirit',
+    #     runtime_s="600",
+    #     mem_mb=1500
     log:
         "logs/04_FilterContigs/FilterContigs_{LIBRARY}"
     shell:
         "scripts/04_filterContigs.sh {input.assembly} {params.coverage} {params.length} {output.filteredContigs}"
 
-
-rule checkM:
+rule prokka:
     input:
         assembly=rules.FilterContigs.output.filteredContigs
     output:
         #outDir=directory(pathCheckM + "/{LIBRARY}/")
-        tsv=pathCheckM + "/{LIBRARY}/CheckM_QC_{LIBRARY}.tsv",
-        tsvf2=pathCheckM + "/{LIBRARY}/CheckM_QC_f2_{LIBRARY}.tsv"
+        annot=directory(pathAnnotation + "/{LIBRARY}")
 
     params:
         workDir=workDir,
-        outDir=pathCheckM + "/{LIBRARY}",
+        outDir=pathAnnotation + "/{LIBRARY}",
         genomeID="{LIBRARY}"
-    resources:
-        account='pengel_spirit',
-        runtime_s="86400",
-        mem_mb=150000
+    # resources:
+    #     account='pengel_spirit',
+    #     runtime_s="86400",
+    #     mem_mb=150000
     log:
-        "logs/05_checkM/checkM_{LIBRARY}"
+        "logs/05_prokka/checkM_{LIBRARY}"
     conda:
-        "envs/05_checkM.yaml"
+        "envs/05_prokka.yaml"
     shell:
-        "scripts/05_checkM.sh {params.workDir} {input.assembly} {params.outDir} {params.genomeID}"
+        "scripts/05_prokka.sh {params.workDir} {input.assembly} {params.outDir} {params.genomeID}"
 
-# works only on the cluster
-rule dram:
-    input:
-        assembly=rules.assembly.output.outDir,
-        tsvf2=rules.checkM.output.tsv
-    output:
-       outDir= directory(pathAnnotation + "/{LIBRARY}")
-    params:
-      outDir=pathAnnotation,
-      genomeID="{LIBRARY}"
-    resources:
-        account='pengel_spirit',
-        runtime_s="1800",
-        mem_mb=150000
-    threads: 16
-    log : "logs/06_DRAM/DRAM_{LIBRARY}"
-    message: "DRAM annotation"
-    #conda:
-    #    "envs/05_dram.yaml"
-    shell:
-        "scripts/06_dram.sh {params.outDir} {input.tsvf2} {input.assembly} {params.genomeID}"
+# rule checkM:
+#     input:
+#         assembly=rules.FilterContigs.output.filteredContigs
+#     output:
+#         #outDir=directory(pathCheckM + "/{LIBRARY}/")
+#         tsv=pathCheckM + "/{LIBRARY}/CheckM_QC_{LIBRARY}.tsv",
+#         tsvf2=pathCheckM + "/{LIBRARY}/CheckM_QC_f2_{LIBRARY}.tsv"
+#
+#     params:
+#         workDir=workDir,
+#         outDir=pathCheckM + "/{LIBRARY}",
+#         genomeID="{LIBRARY}"
+#     # resources:
+#     #     account='pengel_spirit',
+#     #     runtime_s="86400",
+#     #     mem_mb=150000
+#     log:
+#         "logs/05_checkM/checkM_{LIBRARY}"
+#     conda:
+#         "envs/05_checkM.yaml"
+#     shell:
+#         "scripts/05_checkM.sh {params.workDir} {input.assembly} {params.outDir} {params.genomeID}"
 
-rule readMapping:
-    input:
-        FWD=rules.readTrimming.output.pairedFWD,
-        REV=rules.readTrimming.output.pairedREV,
-        assembly=rules.FilterContigs.output.filteredContigs
-    output:
-      sam=pathCoverage + "/{LIBRARY}_mapping.sam",
-      bam=pathCoverage + "/{LIBRARY}_mapping.bam",
-      sorted=pathCoverage + "/{LIBRARY}_mapping_sorted.bam",
-      depth=pathCoverage + "/{LIBRARY}_depth.txt"
+# # works only on the cluster
+# rule dram:
+#     input:
+#         assembly=rules.assembly.output.outDir,
+#         tsvf2=rules.checkM.output.tsv
+#     output:
+#        outDir= directory(pathAnnotation + "/{LIBRARY}")
+#     params:
+#       outDir=pathAnnotation,
+#       genomeID="{LIBRARY}"
+#     resources:
+#         account='pengel_spirit',
+#         runtime_s="1800",
+#         mem_mb=150000
+#     threads: 16
+#     log : "logs/06_DRAM/DRAM_{LIBRARY}"
+#     message: "DRAM annotation"
+#     #conda:
+#     #    "envs/05_dram.yaml"
+#     shell:
+#         "scripts/06_dram.sh {params.outDir} {input.tsvf2} {input.assembly} {params.genomeID}"
 
-    params:
-      genomeID="{LIBRARY}"
-    resources:
-        account='pengel_spirit',
-        runtime_s="1800",
-        mem_mb=150000 #150G
-    threads: 16
-    log : "logs/QC/QC_{LIBRARY}"
-    conda:
-      "envs/07_readCoverage.yaml"
-    shell:
-      "scripts/07_readMapping.sh {input.assembly} {input.FWD} {input.REV} {params.genomeID} {output.sam} {output.bam} {output.sorted} {output.depth}"
+# rule readMapping:
+#     input:
+#         FWD=rules.readTrimming.output.pairedFWD,
+#         REV=rules.readTrimming.output.pairedREV,
+#         assembly=rules.FilterContigs.output.filteredContigs
+#     output:
+#       sam=pathCoverage + "/{LIBRARY}_mapping.sam",
+#       bam=pathCoverage + "/{LIBRARY}_mapping.bam",
+#       sorted=pathCoverage + "/{LIBRARY}_mapping_sorted.bam",
+#       depth=pathCoverage + "/{LIBRARY}_depth.txt"
+#
+#     params:
+#       genomeID="{LIBRARY}"
+#     resources:
+#         account='pengel_spirit',
+#         runtime_s="1800",
+#         mem_mb=150000 #150G
+#     threads: 16
+#     log : "logs/QC/QC_{LIBRARY}"
+#     conda:
+#       "envs/07_readCoverage.yaml"
+#     shell:
+#       "scripts/07_readMapping.sh {input.assembly} {input.FWD} {input.REV} {params.genomeID} {output.sam} {output.bam} {output.sorted} {output.depth}"
 
 # rule plotCoverage:
 #     input:
