@@ -9,7 +9,7 @@ outFile=$4
 # store headers with $4= length and $6=coverage above specified values
 
 echo "1) Getting contigs headers"
-grep '>' ${contigs} | sed 's/_/ /g' | awk '{if($3>500 && $2>10){print $0}}' | sed 's/ /_/g' > $(dirname ${contigs})/HeaderFiltered.txt
+grep '>' ${contigs} | sed 's/_/ /g' | awk '{if($4>500 && $6>10){print $0}}' | sed 's/ /_/g' > $(dirname ${contigs})/HeaderFiltered.txt
 
 echo "2) Extracting sequences"
 # get the ids in an array - search pattern and if in ids copy until nex pattern
