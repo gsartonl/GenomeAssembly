@@ -1,8 +1,8 @@
-########## Welcome to the genome assembler ##########
+########## Welcome to the lab genome assembler ##########
 ###					 	  ###
 ### 		@gsartonl 			  ###
 ###                                               ###
-### -> https://github.com/gsartonl/GenomeAssembly ###
+
 
 
 There are a few setup steps before runing the pipeline.
